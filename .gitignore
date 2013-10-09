@@ -1,0 +1,7 @@
+*.tmp
+*.bak
+*.swp
+*.py[co]
+
+# Mac crap
+.DS_Store
