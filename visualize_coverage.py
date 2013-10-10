@@ -1,3 +1,7 @@
+# Copyright (c) 2013 Caleb Morse
+# Released under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
 import Image
 import sys
 import os

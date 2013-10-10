@@ -1,3 +1,7 @@
+# Copyright (c) 2013 Caleb Morse
+# Released under the MIT license
+# http://opensource.org/licenses/mit-license.php
+
 # Repairs dted level 0, avg, min, and max files which are missing file
 # headers or have invalid lat/lon origin values
 
