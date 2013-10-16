@@ -54,8 +54,6 @@ def main(argv):
     for filename in fnmatch.filter(filenames, '*.' + file_ext):
       src_file = os.path.join(root, filename)
       
-      print 'Working on file: ', src_file 
-
       latitude_hem  = filename[:1].upper()
       latitude      = int(filename[1:3])
       longitude_hem = filename[3:4].upper()
@@ -162,11 +160,10 @@ def write_file(src_file, dted_level, latitude, longitude):
     if not os.path.isdir(dest_file_path):
       os.makedirs(dest_file_path)
 
-    print dest_file_path + dest_file_name
+    print 'Working on file: ', src_file, dest_file_path + dest_file_name
 
-    # Make destination folders
-    if not os.path.isdir(dest_file_path):
-      os.makedirs(dest_file_path)
+    if os.path.isfile(dest_file_path + dest_file_name):
+      return
 
     touch(dest_file_path + dest_file_name)
 
@@ -327,7 +324,7 @@ def write_file(src_file, dted_level, latitude, longitude):
           ofile.write(struct.pack(">I", checksum))
 
       else:
-        for cur_lon_count in range(0, lon_count):
+        for cur_lon_count in range(0, src_lon_count):
           ofile.write(struct.pack(">I", cur_lon_count))
 
           ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
@@ -346,7 +343,7 @@ def write_file(src_file, dted_level, latitude, longitude):
             checksum += struct.unpack("B", ofile.read(1))[0]
 
           # Copy all of the bytes over
-          for i in range(0, lon_count * 2):
+          for i in range(0, src_lat_count * 2):
             byte = struct.unpack("B", ifile.read(1))[0]
 
             # Add byte to the checkum
@@ -357,11 +354,7 @@ def write_file(src_file, dted_level, latitude, longitude):
           # Write checksum
           ofile.write(struct.pack(">I", checksum))
 
-          print 'end', ifile.tell()
-
 def touch(path):
-  if os.path.isfile(path):
-    os.remove(path)
 
   with open(path, 'a'):
     os.utime(path, None)
