@@ -13,7 +13,13 @@ import sys
 import getopt
 import struct
 
+base_file_headers = ""
+output_path = ""
+
 def main(argv):
+  global base_file_headers
+  global output_path
+
   dted_level = 1
   # File to use to construct other files
   dted_base_header = 'base_dt1_headers.bin'
@@ -77,262 +83,281 @@ def main(argv):
       with open(src_file, 'rb') as ifile:
         ifile.seek(0, os.SEEK_END)
         if(ifile.tell() == 1201 * 1201 * 2):
-          lat_interval = 3
-          lon_interval = 3
-          lat_count = 1201
-          lon_count = 1201
-          dted_level = 1
-
-          dted_lat_interval = lat_interval
-
-          if (abs(latitude) >= 80):
-            dted_lon_interval = 18
-          elif (abs(latitude) >= 75):
-            dted_lon_interval = 12
-          elif (abs(latitude) >= 70):
-            dted_lon_interval = 9
-          elif (abs(latitude) >= 50):
-            dted_lon_interval = 6
-          else:
-            dted_lon_interval = 3
-
-          dted_lat_count = lat_count
-          dted_lon_count = ((lon_count * 3) / dted_lon_interval) + 1
+          write_file(src_file, 1, latitude, longitude)
+          
 
         elif (ifile.tell() == 3601 * 3601  * 2):
-          lat_interval = 1
-          lon_interval = 1
-          lat_count = 3601
-          lon_count = 3601
-          dted_level = 2
+          write_file(src_file, 1, latitude, longitude)
 
-          dted_lat_interval = lat_interval
-
-          if (abs(latitude) >= 80):
-            dted_lon_interval = 6
-          elif (abs(latitude) >= 75):
-            dted_lon_interval = 4
-          elif (abs(latitude) >= 70):
-            dted_lon_interval = 3
-          elif (abs(latitude) >= 50):
-            dted_lon_interval = 2
-          else:
-            dted_lon_interval = 1
-
-          dted_lat_count = lat_count
-          dted_lat_count = ((lon_count * 3) / dted_lon_interval) + 1
+          write_file(src_file, 2, latitude, longitude)
 
         else:
           print 'Bad filesize', ifile.tell()
           sys.exit()
-        ifile.seek(0)
 
-        if dted_lon_interval != lon_interval:
-          print 'different interval', dted_lon_interval, lon_interval
+def write_file(src_file, dted_level, latitude, longitude):
 
+  with open(src_file, 'rb') as ifile:
+    ifile.seek(0, os.SEEK_END)
+    if(ifile.tell() == 1201 * 1201 * 2):
+      src_lat_count = 1201
+      src_lon_count = 1201
+      src_lat_interval = 3
+      src_lon_interval = 3
 
-        dest_file_path = output_path + get_lon_hem(longitude).lower() + (str(abs(longitude)).zfill(3)) + '/'
-        dest_file_name = get_lat_hem(latitude).lower() + (str(abs(latitude)).zfill(2)) + '.dt' + str(dted_level) 
+    elif (ifile.tell() == 3601 * 3601  * 2):
+      src_lat_count = 3601
+      src_lon_count = 3601
+      src_lat_interval = 1
+      src_lon_interval = 1
 
-        print dest_file_path + dest_file_name
+    else:
+      print 'Bad filesize', ifile.tell()
+      sys.exit()
+    ifile.seek(0)
 
-        # Make destination folders
-        if not os.path.isdir(dest_file_path):
-          os.makedirs(dest_file_path)
+    if(dted_level == 1):
+      if (abs(latitude) >= 80):
+        dted_lon_interval = 18
+      elif (abs(latitude) >= 75):
+        dted_lon_interval = 12
+      elif (abs(latitude) >= 70):
+        dted_lon_interval = 9
+      elif (abs(latitude) >= 50):
+        dted_lon_interval = 6
+      else:
+        dted_lon_interval = 3
 
+      dted_lon_count = 1201
 
-        touch(dest_file_path + dest_file_name)
+    elif (dted_level == 2):
+      if (abs(latitude) >= 80):
+        dted_lon_interval = 6
+      elif (abs(latitude) >= 75):
+        dted_lon_interval = 4
+      elif (abs(latitude) >= 70):
+        dted_lon_interval = 3
+      elif (abs(latitude) >= 50):
+        dted_lon_interval = 2
+      else:
+        dted_lon_interval = 1
 
-        with open(dest_file_path + dest_file_name, 'r+b') as ofile:
-          ofile.write(base_file_headers)
+      dted_lon_count = 3601
 
-          # Write longitude 
-          ofile.seek(4, 0)
-          ofile.write(str(abs(longitude)).zfill(3))
-          ofile.write('0000')
-          ofile.write(get_lon_hem(longitude))
-          # Write latitude 
-          ofile.write(str(abs(latitude)).zfill(3))
-          ofile.write('0000')
-          ofile.write(get_lat_hem(latitude))
+    else:
+      print 'Bad dted level'
+      sys.exit()
+    
+    dted_lat_interval = src_lat_interval
+    dted_lat_count = src_lat_count
+    dted_lat_count = ((src_lon_count * 3) / dted_lon_interval) + 1
 
-          # Write lat and longitude interval
-          ofile.write(str(dted_lon_interval * 10).zfill(4))
-          ofile.write(str(dted_lat_interval * 10).zfill(4))
+    if dted_lon_interval != src_lon_interval:
+      print 'different interval', dted_lon_interval, src_lon_interval
 
-          ofile.seek(47, 0)
+    dest_file_path = output_path + get_lon_hem(longitude).lower() + (str(abs(longitude)).zfill(3)) + '/'
+    dest_file_name = get_lat_hem(latitude).lower() + (str(abs(latitude)).zfill(2)) + '.dt' + str(dted_level) 
 
-          # Write lat and longitude count
-          ofile.write(str(dted_lon_count).zfill(4))
-          ofile.write(str(dted_lat_count).zfill(4))
+    # Make destination folders
+    if not os.path.isdir(dest_file_path):
+      os.makedirs(dest_file_path)
 
-          # write mult_acc filed
-          ofile.write('0')
-          
+    print dest_file_path + dest_file_name
 
-          ofile.seek(80 + 59)
-         
-          # Write NIMA series indicator
-          ofile.write('DTED' + str(dted_level))
+    # Make destination folders
+    if not os.path.isdir(dest_file_path):
+      os.makedirs(dest_file_path)
 
-          ofile.write(' ' * 15)        # Blank out unique reference section
-          ofile.write(str(1).zfill(2)) # Data edition
-          ofile.write('A')             # Match/Merge version
-          ofile.write('000000000000')  # Maint date, match/merge date, maint descrip code
-          ofile.write('USCNIMA')       # Producer code
+    touch(dest_file_path + dest_file_name)
 
-          ofile.seek(80 + 126, 0)
-          ofile.write('PRF8902B') # Product specification
+    with open(dest_file_path + dest_file_name, 'r+b') as ofile:
+      ofile.write(base_file_headers)
 
-          ofile.seek(80 + 149, 0)
-          ofile.write('SRTM')
-          ofile.write(' ' * 6)
+      # Write longitude 
+      ofile.seek(4, 0)
+      ofile.write(str(abs(longitude)).zfill(3))
+      ofile.write('0000')
+      ofile.write(get_lon_hem(longitude))
+      # Write latitude 
+      ofile.write(str(abs(latitude)).zfill(3))
+      ofile.write('0000')
+      ofile.write(get_lat_hem(latitude))
 
+      # Write lat and longitude interval
+      ofile.write(str(dted_lon_interval * 10).zfill(4))
+      ofile.write(str(dted_lat_interval * 10).zfill(4))
 
-          ofile.seek(80 + 185, 0)
-          
-          # Write lat_origin
-          ofile.write(str(abs(latitude)).zfill(2))
-          ofile.write('0000.0')
-          ofile.write(get_lat_hem(latitude))
-          # Write lon_origin
-          ofile.write(str(abs(longitude)).zfill(3))
-          ofile.write('0000.0')
-          ofile.write(get_lon_hem(longitude))
+      ofile.seek(47, 0)
 
-          # Write lat_sw
-          ofile.write(str(abs(latitude)).zfill(2))
-          ofile.write('0000')
-          ofile.write(get_lat_hem(latitude))
-          # Write lon_sw
-          ofile.write(str(abs(longitude)).zfill(3))
-          ofile.write('0000')
-          ofile.write(get_lon_hem(longitude))
+      # Write lat and longitude count
+      ofile.write(str(dted_lon_count).zfill(4))
+      ofile.write(str(dted_lat_count).zfill(4))
 
-          # Write lat_nw
-          ofile.write(str(abs(latitude + 1)).zfill(2))
-          ofile.write('0000')
-          ofile.write(get_lat_hem(latitude + 1))
-          # Write lon_nw
-          ofile.write(str(abs(longitude)).zfill(3))
-          ofile.write('0000')
-          ofile.write(get_lon_hem(longitude))
+      # write mult_acc filed
+      ofile.write('0')
+      
 
-          # Write lat_ne
-          ofile.write(str(abs(latitude + 1)).zfill(2))
-          ofile.write('0000')
-          ofile.write(get_lat_hem(latitude + 1))
-          # Write lon_ne
-          ofile.write(str(abs(longitude + 1)).zfill(3))
-          ofile.write('0000')
-          ofile.write(get_lon_hem(longitude + 1))
+      ofile.seek(80 + 59)
+     
+      # Write NIMA series indicator
+      ofile.write('DTED' + str(dted_level))
 
-          # Write lat_se
-          ofile.write(str(abs(latitude)).zfill(2))
-          ofile.write('0000')
-          ofile.write(get_lat_hem(latitude))
-          # Write lon_se
-          ofile.write(str(abs(longitude + 1)).zfill(3))
-          ofile.write('0000')
-          ofile.write(get_lon_hem(longitude + 1))
+      ofile.write(' ' * 15)        # Blank out unique reference section
+      ofile.write(str(1).zfill(2)) # Data edition
+      ofile.write('A')             # Match/Merge version
+      ofile.write('000000000000')  # Maint date, match/merge date, maint descrip code
+      ofile.write('USCNIMA')       # Producer code
 
-          ofile.seek(80 + 264 + 9)
+      ofile.seek(80 + 126, 0)
+      ofile.write('PRF8902B') # Product specification
 
-          # Write lat and longitude interval
-          ofile.write(str(dted_lon_interval * 10).zfill(4))
-          ofile.write(str(dted_lat_interval * 10).zfill(4))
-
-          # Write lat and longitude count
-          ofile.write(str(dted_lon_count).zfill(4))
-          ofile.write(str(dted_lat_count).zfill(4))
-
-
-          ofile.seek(80 + 648 + 55)  
-          ofile.write('00') # Mult_acc flag
-
-          # Zero out multi_acc portion of header
-          ofile.write(' ' * 2643) 
-
-          record_size = (1 + 3 + 2 + 2 + 4 + (dted_lat_count * 2))
+      ofile.seek(80 + 149, 0)
+      ofile.write('SRTM')
+      ofile.write(' ' * 6)
 
 
-          # How many do we need to average?
-          interval_diff = dted_lon_interval / lon_interval
+      ofile.seek(80 + 185, 0)
+      
+      # Write lat_origin
+      ofile.write(str(abs(latitude)).zfill(2))
+      ofile.write('0000.0')
+      ofile.write(get_lat_hem(latitude))
+      # Write lon_origin
+      ofile.write(str(abs(longitude)).zfill(3))
+      ofile.write('0000.0')
+      ofile.write(get_lon_hem(longitude))
 
-          if dted_lon_interval != lon_interval:
-            values = array('H')
+      # Write lat_sw
+      ofile.write(str(abs(latitude)).zfill(2))
+      ofile.write('0000')
+      ofile.write(get_lat_hem(latitude))
+      # Write lon_sw
+      ofile.write(str(abs(longitude)).zfill(3))
+      ofile.write('0000')
+      ofile.write(get_lon_hem(longitude))
 
-            for i in range(0, lon_count * lat_count):
-              values.append(struct.unpack(">H", ifile.read(2))[0])
+      # Write lat_nw
+      ofile.write(str(abs(latitude + 1)).zfill(2))
+      ofile.write('0000')
+      ofile.write(get_lat_hem(latitude + 1))
+      # Write lon_nw
+      ofile.write(str(abs(longitude)).zfill(3))
+      ofile.write('0000')
+      ofile.write(get_lon_hem(longitude))
 
-            values = numpy.reshape(values, [lat_count, lon_count])
+      # Write lat_ne
+      ofile.write(str(abs(latitude + 1)).zfill(2))
+      ofile.write('0000')
+      ofile.write(get_lat_hem(latitude + 1))
+      # Write lon_ne
+      ofile.write(str(abs(longitude + 1)).zfill(3))
+      ofile.write('0000')
+      ofile.write(get_lon_hem(longitude + 1))
 
-            val2 = scipy.misc.imresize(values, [dted_lat_count, dted_lon_count])
+      # Write lat_se
+      ofile.write(str(abs(latitude)).zfill(2))
+      ofile.write('0000')
+      ofile.write(get_lat_hem(latitude))
+      # Write lon_se
+      ofile.write(str(abs(longitude + 1)).zfill(3))
+      ofile.write('0000')
+      ofile.write(get_lon_hem(longitude + 1))
 
-            for cur_lon_count in range(0, dted_lon_count):
-              print ofile.tell(), cur_lon_count
-              ofile.write(struct.pack(">I", cur_lon_count))
+      ofile.seek(80 + 264 + 9)
 
-              ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
-              ofile.write('\xAA')
+      # Write lat and longitude interval
+      ofile.write(str(dted_lon_interval * 10).zfill(4))
+      ofile.write(str(dted_lat_interval * 10).zfill(4))
 
-              ofile.seek(3, 1)
-              ofile.write(struct.pack(">H", cur_lon_count))
-              ofile.write(struct.pack(">H", 0))
+      # Write lat and longitude count
+      ofile.write(str(dted_lon_count).zfill(4))
+      ofile.write(str(dted_lat_count).zfill(4))
 
-              checksum = 0
 
-              # Calculate checksum for row headers
-              ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
-              for i in range(0, 12 - 4):
-                # Add byte to the checkum
-                checksum += struct.unpack("B", ofile.read(1))[0]
+      ofile.seek(80 + 648 + 55)  
+      ofile.write('00') # Mult_acc flag
 
-              # Copy all of the bytes over
-              for i in range(0, dted_lat_count):
-                data = val2[i, cur_lon_count] 
+      # Zero out multi_acc portion of header
+      ofile.write(' ' * 2643) 
 
-                # Add byte to the checkum
-                checksum += (data & 0x00FF) + ((data & 0xFF00) >> 8)
+      record_size = (1 + 3 + 2 + 2 + 4 + (dted_lat_count * 2))
 
-                ofile.write(struct.pack(">H", data))
 
-              # Write checksum
-              ofile.write(struct.pack(">I", checksum))
+      # How many do we need to average?
+      interval_diff = dted_lon_interval / src_lon_interval
 
-          else:
-            for cur_lon_count in range(0, lon_count):
-              ofile.write(struct.pack(">I", cur_lon_count))
+      if dted_lon_interval != src_lon_interval or src_lon_count != dted_lon_count or src_lat_count != src_lon_count:
+        values = array('H')
 
-              ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
-              ofile.write('\xAA')
+        for i in range(0, src_lon_count * src_lat_count):
+          values.append(struct.unpack(">H", ifile.read(2))[0])
 
-              ofile.seek(3, 1)
-              ofile.write(struct.pack(">H", cur_lon_count))
-              ofile.write(struct.pack(">H", 0))
+        values = numpy.reshape(values, [src_lat_count, src_lon_count])
 
-              checksum = 0
+        val2 = scipy.misc.imresize(values, [dted_lat_count, dted_lon_count])
 
-              # Calculate checksum for row headers
-              ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
-              for i in range(0, 12 - 4):
-                # Add byte to the checkum
-                checksum += struct.unpack("B", ofile.read(1))[0]
+        for cur_lon_count in range(0, dted_lon_count):
+          ofile.write(struct.pack(">I", cur_lon_count))
 
-              # Copy all of the bytes over
-              for i in range(0, lon_count * 2):
-                byte = struct.unpack("B", ifile.read(1))[0]
+          ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
+          ofile.write('\xAA')
 
-                # Add byte to the checkum
-                checksum += byte
+          ofile.seek(3, 1)
+          ofile.write(struct.pack(">H", cur_lon_count))
+          ofile.write(struct.pack(">H", 0))
 
-                ofile.write(struct.pack("B", byte))
+          checksum = 0
 
-              # Write checksum
-              ofile.write(struct.pack(">I", checksum))
+          # Calculate checksum for row headers
+          ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
+          for i in range(0, 12 - 4):
+            # Add byte to the checkum
+            checksum += struct.unpack("B", ofile.read(1))[0]
 
-              print 'end', ifile.tell()
-          sys.exit()
+          # Copy all of the bytes over
+          for i in range(0, dted_lat_count):
+            data = val2[i, cur_lon_count] 
+
+            # Add byte to the checkum
+            checksum += (data & 0x00FF) + ((data & 0xFF00) >> 8)
+
+            ofile.write(struct.pack(">H", data))
+
+          # Write checksum
+          ofile.write(struct.pack(">I", checksum))
+
+      else:
+        for cur_lon_count in range(0, lon_count):
+          ofile.write(struct.pack(">I", cur_lon_count))
+
+          ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
+          ofile.write('\xAA')
+
+          ofile.seek(3, 1)
+          ofile.write(struct.pack(">H", cur_lon_count))
+          ofile.write(struct.pack(">H", 0))
+
+          checksum = 0
+
+          # Calculate checksum for row headers
+          ofile.seek(80 + 648 + 2700 + record_size * cur_lon_count)
+          for i in range(0, 12 - 4):
+            # Add byte to the checkum
+            checksum += struct.unpack("B", ofile.read(1))[0]
+
+          # Copy all of the bytes over
+          for i in range(0, lon_count * 2):
+            byte = struct.unpack("B", ifile.read(1))[0]
+
+            # Add byte to the checkum
+            checksum += byte
+
+            ofile.write(struct.pack("B", byte))
+
+          # Write checksum
+          ofile.write(struct.pack(">I", checksum))
+
+          print 'end', ifile.tell()
 
 def touch(path):
   if os.path.isfile(path):
