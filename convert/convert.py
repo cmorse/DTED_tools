@@ -69,23 +69,23 @@ def main(argv):
         longitude_hem = filename[3:4].upper()
         longitude     = int(filename[4:7])
 
-        if(latitude_hem != 'S' and latitude_hem != 'N'):
+        if latitude_hem != 'S' and latitude_hem != 'N':
           print 'Bad_hemisphere: ', latitude_hem
           sys.exit();
-        elif(latitude < 0 or latitude > 90):
+        elif latitude < 0 or latitude > 90:
           print 'Bad latitude: ', latitude
           sys.exit()
-        elif(longitude_hem != 'E' and longitude_hem != 'W'):
+        elif longitude_hem != 'E' and longitude_hem != 'W':
           print 'Bad_hemisphere: ', longitude_hem
           sys.exit();
-        elif(longitude < 0 or longitude > 180):
+        elif longitude < 0 or longitude > 180:
           print 'Bad longitude: ', longitude
           sys.exit()
 
-        if(latitude_hem == 'S'):
+        if latitude_hem == 'S':
           latitude *= -1
 
-        if(longitude_hem == 'W'):
+        if longitude_hem == 'W':
           longitude *= -1
 
         with open(src_file, 'rb') as ifile:
@@ -93,10 +93,10 @@ def main(argv):
 
           # Get file size
           file_size = ifile.tell()
-          if(file_size == 1201 * 1201 * 2):
+          if file_size == 1201 * 1201 * 2:
             write_file(src_file, 1, latitude, longitude)
 
-          elif (file_size == 3601 * 3601  * 2):
+          elif file_size == 3601 * 3601  * 2:
             write_file(src_file, 1, latitude, longitude)
 
             write_file(src_file, 2, latitude, longitude)
@@ -109,10 +109,10 @@ def write_file(src_file, dted_level, latitude, longitude):
 
   dest_file = options.output_path + get_dted_filename(latitude, longitude, dted_level)
 
-  print 'starting', 'Working on file: ', src_file, dest_file
-
   if not options.overwrite_dest and os.path.isfile(dest_file):
     return
+
+  print 'files: ', src_file, dest_file
 
   touch(dest_file)
 
@@ -120,11 +120,11 @@ def write_file(src_file, dted_level, latitude, longitude):
 
     ifile.seek(0, os.SEEK_END)
     # Interval and count is the same in lat and lon directions for src 
-    if(ifile.tell() == 1201 * 1201 * 2):
+    if ifile.tell() == 1201 * 1201 * 2:
       src_count = 1201
       src_interval = 3
 
-    elif (ifile.tell() == 3601 * 3601  * 2):
+    elif ifile.tell() == 3601 * 3601  * 2:
       src_count = 3601
       src_interval = 1
 
