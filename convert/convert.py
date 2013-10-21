@@ -1,8 +1,10 @@
+#!/usr/bin/env python
+
 # Copyright (c) 2013 Caleb Morse
 # Released under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
-# Converts the DEM (.hgt) file format to DTED level 1
+# Converts the DEM (.hgt) file format to DTED level 1 or 2
 # See: http://dds.cr.usgs.gov/srtm/version1/Documentation/SRTM_Topo.txt
 
 import numpy
