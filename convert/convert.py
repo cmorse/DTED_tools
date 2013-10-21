@@ -50,9 +50,15 @@ def main(argv):
                     choices = ["", "lz4"],
                     help = "Input files are compressed")
 
+  parser.add_option("--dted-level",
+                    dest = "dted_level",
+                    type = "int",
+                    help = "DTED level to output.")
+
   parser.add_option("--ext",
                     dest = "file_ext",
                     default = "hgt",
+                    type = "string",
                     help = "Source file extensions to use. Comma delimited.")
 
   parser.add_option("--dted-base-header",
@@ -68,6 +74,10 @@ def main(argv):
                     help = "Folder to put the files in.")
 
   options, remainder = parser.parse_args()
+
+  if options.dted_level < 0 or options.dted_level > 2:
+    print 'Invalid dted level ' + options.dted_level
+    sys.exit(-1)
 
   # Split, and prepend '*.' to every extension
   options.file_ext = ['*.' + ext for ext in options.file_ext.split(',')]
@@ -114,7 +124,10 @@ def main(argv):
         if longitude_hem == 'W':
           longitude *= -1
 
-        print src_file
+        dest_file = options.output_path + get_dted_filename(latitude, longitude, options.dted_level)
+
+        if not options.overwrite_dest and os.path.isfile(dest_file):
+          continue
 
         if has_lz4:
           ifile = StringIO.StringIO(Popen(["lz4 -d " + src_file + ""], shell=True, stdout=PIPE).communicate()[0])
@@ -122,20 +135,25 @@ def main(argv):
         else:
           ifile = open(src_file, 'rb')
 
-        write_file(src_file, ifile, latitude, longitude)
+        print 'files: ', src_file, dest_file
 
-def write_file(src_file, ifile, latitude, longitude):
+        write_file(src_file, dest_file, ifile, latitude, longitude)
+
+def write_file(src_file, dest_file, ifile, latitude, longitude):
   ifile.seek(0, os.SEEK_END)
+
+  dted_level = options.dted_level
 
   # Interval and count is the same in lat and lon directions for src
   file_size = ifile.tell()
   if file_size == 1201 * 1201 * 2:
-    dted_level = 1
+    if dted_level > 1:
+      print 'DTED level ' + dted_level + ' is too high for this file type.'
+      sys.exit(-1)
     src_count = 1201
     src_interval = 3
 
   elif file_size == 3601 * 3601  * 2:
-    dted_level = 2
     src_count = 3601
     src_interval = 1
 
@@ -159,13 +177,6 @@ def write_file(src_file, ifile, latitude, longitude):
       dted_lon_count = ((src_count * 3)  / dted_lon_interval) + 1
     else:
       dted_lon_count = ((src_count * 1)  / dted_lon_interval) + 1
-
-  dest_file = options.output_path + get_dted_filename(latitude, longitude, dted_level)
-
-  if not options.overwrite_dest and os.path.isfile(dest_file):
-    return
-
-  print 'files: ', src_file, dest_file
 
   touch(dest_file)
 
