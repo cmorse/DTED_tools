@@ -181,131 +181,139 @@ def write_file(src_file, dest_file, ifile, latitude, longitude):
 
   touch(dest_file)
 
-  with open(dest_file, 'wb') as ofile:
-    ofile.write(base_file_headers)
-
-  #with open(dest_file, 'wb', get_dted_filesize(dted_lat_count, dted_lon_count)) as ofile:
+  error = False
   with open(dest_file, 'r+b') as ofile:
-    mm = mmap.mmap(ofile.fileno(), 0)
-    mm.resize(get_dted_filesize(dted_lat_count, dted_lon_count))
+    with open(dest_file, 'wb') as ofile2:
+      ofile2.write(base_file_headers)
 
-    # Write longitude
-    mm.seek(4, 0)
-    mm.write(str(abs(longitude)).zfill(3) + '0000' + get_lon_hem(longitude))
-    # Write latitude
-    mm.write(str(abs(latitude)).zfill(3)  + '0000' + get_lat_hem(latitude))
+    try:
+      mm = mmap.mmap(ofile.fileno(), 0)
+      mm.resize(get_dted_filesize(dted_lat_count, dted_lon_count))
 
-    # Write lat and longitude interval
-    mm.write(str(dted_lon_interval * 10).zfill(4))
-    mm.write(str(dted_lat_interval * 10).zfill(4))
+      # Write longitude
+      mm.seek(4, 0)
+      mm.write(str(abs(longitude)).zfill(3) + '0000' + get_lon_hem(longitude))
+      # Write latitude
+      mm.write(str(abs(latitude)).zfill(3)  + '0000' + get_lat_hem(latitude))
 
-    mm.seek(47, 0)
+      # Write lat and longitude interval
+      mm.write(str(dted_lon_interval * 10).zfill(4))
+      mm.write(str(dted_lat_interval * 10).zfill(4))
 
-    # Write lat and longitude count
-    mm.write(str(dted_lon_count).zfill(4))
-    mm.write(str(dted_lat_count).zfill(4))
+      mm.seek(47, 0)
 
-    # write mult_acc filed
-    mm.write('0')
+      # Write lat and longitude count
+      mm.write(str(dted_lon_count).zfill(4))
+      mm.write(str(dted_lat_count).zfill(4))
 
-
-    mm.seek(80 + 59)
-
-    # Write NIMA series indicator
-    mm.write('DTED' + str(dted_level))
-
-    mm.write(' ' * 15)        # Blank out unique reference section
-    mm.write(str(1).zfill(2)) # Data edition
-    mm.write('A')             # Match/Merge version
-    mm.write('000000000000')  # Maint date, match/merge date, maint descrip code
-    mm.write('USCNIMA')       # Producer code
-
-    mm.seek(80 + 149, 0)
-    mm.write('SRTM' + (' ' * 6))
+      # write mult_acc filed
+      mm.write('0')
 
 
-    mm.seek(80 + 185, 0)
+      mm.seek(80 + 59)
 
-    # Write lat_origin and lon_origin
-    mm.write(str(abs(latitude )).zfill(2) + '0000.0' + get_lat_hem(latitude))
-    mm.write(str(abs(longitude)).zfill(3) + '0000.0' + get_lon_hem(longitude))
+      # Write NIMA series indicator
+      mm.write('DTED' + str(dted_level))
 
-    # Write lat_sw and lon_sw
-    mm.write(str(abs(latitude )).zfill(2) + '0000' + get_lat_hem(latitude))
-    mm.write(str(abs(longitude)).zfill(3) + '0000' + get_lon_hem(longitude))
+      mm.write(' ' * 15)        # Blank out unique reference section
+      mm.write(str(1).zfill(2)) # Data edition
+      mm.write('A')             # Match/Merge version
+      mm.write('000000000000')  # Maint date, match/merge date, maint descrip code
+      mm.write('USCNIMA')       # Producer code
 
-    # Write lat_nw and lon_nw
-    mm.write(str(abs(latitude + 1)).zfill(2) + '0000' + get_lat_hem(latitude + 1))
-    mm.write(str(abs(longitude   )).zfill(3) + '0000' + get_lon_hem(longitude))
-
-    # Write lat_ne and lon_ne
-    mm.write(str(abs(latitude  + 1)).zfill(2) + '0000' + get_lat_hem(latitude  + 1))
-    mm.write(str(abs(longitude + 1)).zfill(3) + '0000' + get_lon_hem(longitude + 1))
-
-    # Write lat_se and lon_se
-    mm.write(str(abs(latitude     )).zfill(2) + '0000' + get_lat_hem(latitude))
-    mm.write(str(abs(longitude + 1)).zfill(3) + '0000' + get_lon_hem(longitude + 1))
-
-    mm.seek(80 + 264 + 9)
-
-    # Write lat and longitude interval
-    mm.write(str(dted_lon_interval * 10).zfill(4))
-    mm.write(str(dted_lat_interval * 10).zfill(4))
-
-    # Write lat and longitude count
-    mm.write(str(dted_lon_count).zfill(4))
-    mm.write(str(dted_lat_count).zfill(4))
+      mm.seek(80 + 149, 0)
+      mm.write('SRTM' + (' ' * 6))
 
 
-    mm.seek(80 + 648 + 55)
-    mm.write('00') # Mult_acc flag
+      mm.seek(80 + 185, 0)
+
+      # Write lat_origin and lon_origin
+      mm.write(str(abs(latitude )).zfill(2) + '0000.0' + get_lat_hem(latitude))
+      mm.write(str(abs(longitude)).zfill(3) + '0000.0' + get_lon_hem(longitude))
+
+      # Write lat_sw and lon_sw
+      mm.write(str(abs(latitude )).zfill(2) + '0000' + get_lat_hem(latitude))
+      mm.write(str(abs(longitude)).zfill(3) + '0000' + get_lon_hem(longitude))
+
+      # Write lat_nw and lon_nw
+      mm.write(str(abs(latitude + 1)).zfill(2) + '0000' + get_lat_hem(latitude + 1))
+      mm.write(str(abs(longitude   )).zfill(3) + '0000' + get_lon_hem(longitude))
+
+      # Write lat_ne and lon_ne
+      mm.write(str(abs(latitude  + 1)).zfill(2) + '0000' + get_lat_hem(latitude  + 1))
+      mm.write(str(abs(longitude + 1)).zfill(3) + '0000' + get_lon_hem(longitude + 1))
+
+      # Write lat_se and lon_se
+      mm.write(str(abs(latitude     )).zfill(2) + '0000' + get_lat_hem(latitude))
+      mm.write(str(abs(longitude + 1)).zfill(3) + '0000' + get_lon_hem(longitude + 1))
+
+      mm.seek(80 + 264 + 9)
+
+      # Write lat and longitude interval
+      mm.write(str(dted_lon_interval * 10).zfill(4))
+      mm.write(str(dted_lat_interval * 10).zfill(4))
+
+      # Write lat and longitude count
+      mm.write(str(dted_lon_count).zfill(4))
+      mm.write(str(dted_lat_count).zfill(4))
 
 
-    # Read all of the values from the source file into memory
-    values = array('H')
+      mm.seek(80 + 648 + 55)
+      mm.write('00') # Mult_acc flag
 
-    values.fromstring(ifile.getvalue())
 
-    # Reshape and flip the array so that it matches the DTED order
-    values = numpy.flipud(numpy.reshape(values, [src_count, src_count]))
+      # Read all of the values from the source file into memory
+      values = array('H')
 
-    # Resize the input array if necessary
-    if dted_lon_interval != src_interval or dted_lon_count != src_count:
-      values = scipy.misc.imresize(values, [dted_lat_count, dted_lon_count])
+      values.fromstring(ifile.getvalue())
 
-    record_size = dted_record_size(dted_lat_count)
+      # Reshape and flip the array so that it matches the DTED order
+      values = numpy.flipud(numpy.reshape(values, [src_count, src_count]))
 
-    start = time.clock()
-    for cur_lon_count in range(0, dted_lon_count):
-      mm.seek(dted_headersize + record_size * cur_lon_count)
+      # Resize the input array if necessary
+      if dted_lon_interval != src_interval or dted_lon_count != src_count:
+        values = scipy.misc.imresize(values, [dted_lat_count, dted_lon_count])
 
-      # Write data block count, longitude count, and latitude count
-      mm.write(struct.pack(">IHH", cur_lon_count, cur_lon_count, 0))
+      record_size = dted_record_size(dted_lat_count)
 
-      # Don't need to add lat_count because it is always zero
-      # Add first two bits from longitude count twice for data block count and longitude count
-      # Only the data block count has a 3rd byte
-      checksum = 0xAA + ((cur_lon_count & 0xFF) + ((cur_lon_count & 0xFF00) >> 8)) * 2 + ((cur_lon_count & 0xFF0000) >> 16)
+      start = time.clock()
+      for cur_lon_count in range(0, dted_lon_count):
+        mm.seek(dted_headersize + record_size * cur_lon_count)
 
-      # Current array of values to work with
-      cur_arr = values[:, cur_lon_count]
+        # Write data block count, longitude count, and latitude count
+        mm.write(struct.pack(">IHH", cur_lon_count, cur_lon_count, 0))
 
-      # Calculate the checksum
-      for cur_val in cur_arr:
-        checksum += (cur_val & 0x00FF) + ((cur_val & 0xFF00) >> 8)
+        # Don't need to add lat_count because it is always zero
+        # Add first two bits from longitude count twice for data block count and longitude count
+        # Only the data block count has a 3rd byte
+        checksum = 0xAA + ((cur_lon_count & 0xFF) + ((cur_lon_count & 0xFF00) >> 8)) * 2 + ((cur_lon_count & 0xFF0000) >> 16)
 
-      # Copy all of the bytes over
-      mm.write(struct.pack("H" * dted_lat_count, *cur_arr))
+        # Current array of values to work with
+        cur_arr = values[:, cur_lon_count]
 
-      # Write checksum
-      mm.write(struct.pack(">I", checksum))
+        # Calculate the checksum
+        for cur_val in cur_arr:
+          checksum += (cur_val & 0x00FF) + ((cur_val & 0xFF00) >> 8)
 
-    # Write the sentinels
-    for cur_lon_count in range(0, dted_lon_count):
-      mm.seek(dted_headersize + record_size * cur_lon_count)
-      mm.write('\xAA')
+        # Copy all of the bytes over
+        mm.write(struct.pack("H" * dted_lat_count, *cur_arr))
 
-    print 'runtime: ', time.clock() - start
+        # Write checksum
+        mm.write(struct.pack(">I", checksum))
+
+      # Write the sentinels
+      for cur_lon_count in range(0, dted_lon_count):
+        mm.seek(dted_headersize + record_size * cur_lon_count)
+        mm.write('\xAA')
+
+      print 'runtime: ', time.clock() - start
+    except ValueError:
+      print 'Deleting file, error making memory map'
+      error = True
+
+  if error:
+    os.remove(dest_file)
+
 
 def get_dted_details(latitude, dted_level):
   latitude = abs(latitude)
