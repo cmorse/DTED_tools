@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # Copyright (c) 2013 Caleb Morse
 # Released under the MIT license
 # http://opensource.org/licenses/mit-license.php
