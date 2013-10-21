@@ -7,18 +7,15 @@
 # Converts the DEM (.hgt) file format to DTED level 1 or 2
 # See: http://dds.cr.usgs.gov/srtm/version1/Documentation/SRTM_Topo.txt
 
-import numpy
-import scipy.misc
+import numpy, scipy.misc
+import os, sys, errno
 import fnmatch
-from array import *
-import os
-import sys
-import optparse
-import struct
 import imp
-import StringIO
+import optparse
+from array import *
+import struct
+import StringIO, mmap
 import time
-import mmap
 
 try:
   import lz4
@@ -177,6 +174,10 @@ def write_file(src_file, dest_file, ifile, latitude, longitude):
       dted_lon_count = ((src_count * 3)  / dted_lon_interval) + 1
     else:
       dted_lon_count = ((src_count * 1)  / dted_lon_interval) + 1
+
+  # Check again if the file exists
+  if not options.overwrite_dest and os.path.isfile(dest_file):
+    return
 
   touch(dest_file)
 
@@ -359,7 +360,14 @@ def touch(path):
   folder = os.path.split(path)[0]
   # Make destination folders
   if not os.path.isdir(folder):
-    os.makedirs(folder)
+    # see: http://stackoverflow.com/a/600612/880928
+    try:
+      os.makedirs(folder)
+    except OSError as exc: # Python >2.5
+      if exc.errno == errno.EEXIST and os.path.isdir(folder):
+        pass
+      else:
+        raise
 
   with open(path, 'a'):
     os.utime(path, None)
