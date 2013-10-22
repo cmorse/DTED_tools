@@ -73,7 +73,7 @@ def main(argv):
   options, remainder = parser.parse_args()
 
   if options.dted_level < 0 or options.dted_level > 2:
-    print 'Invalid dted level ' + options.dted_level
+    print 'Invalid dted level ' + str(options.dted_level)
     sys.exit(-1)
 
   # Split, and prepend '*.' to every extension
@@ -103,16 +103,16 @@ def main(argv):
         longitude     = int(filename[4:7])
 
         if latitude_hem != 'S' and latitude_hem != 'N':
-          print 'Bad_hemisphere: ', latitude_hem
+          print 'Bad_hemisphere: ' + latitude_hem
           sys.exit();
         elif latitude < 0 or latitude > 90:
-          print 'Bad latitude: ', latitude
+          print 'Bad latitude: ' + str(latitude)
           sys.exit()
         elif longitude_hem != 'E' and longitude_hem != 'W':
-          print 'Bad_hemisphere: ', longitude_hem
+          print 'Bad_hemisphere: ' + longitude_hem
           sys.exit();
         elif longitude < 0 or longitude > 180:
-          print 'Bad longitude: ', longitude
+          print 'Bad longitude: ' + str(longitude)
           sys.exit()
 
         if latitude_hem == 'S':
@@ -145,7 +145,7 @@ def write_file(src_file, dest_file, ifile, latitude, longitude):
   file_size = ifile.tell()
   if file_size == 1201 * 1201 * 2:
     if dted_level > 1:
-      print 'DTED level ' + dted_level + ' is too high for this file type.'
+      print 'DTED level ' + str(dted_level) + ' is too high for this file type.'
       sys.exit(-1)
     src_count = 1201
     src_interval = 3
