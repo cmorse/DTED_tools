@@ -8,61 +8,58 @@ import Image
 import sys
 import os
 import fnmatch
-import getopt
+import optparse
 
 def main(argv):
-  src_image = 'k_earth.bmp'
-  dest_image = 'k_earth_out.bmp'
-  dted_path = 'DTED'
-  dted_level = 0
+  parser = optparse.OptionParser()
 
-  try:
-    opt, args = getopt.getopt(argv, 'hd:', ['help', 'src-image=', 'dest-image=', 'dted-level=', 'dted-path='])
-    
-    if not opt:
-      print 'No options supplied'
-      usage()
-      sys.exit(2)
-  
-    for o, a in opt:
-      if o in ("-h", "--help"):
-        usage()
-        sys.exit()
-      elif o in ("-d", "--dted-level"):
-        dted_level = int(a)
-      elif o in ("--dted-path"):
-        dted_path = str(a)
-      elif o in("--src-image"):
-        src_image = str(a)
-      elif o in ("--dest-image"):
-        dest_iamge = str(a)
-  
-  except getopt.GetoptError, e:
-    print e
-    usage()
-    sys.exit(2)
+  parser.add_option("--dted-level",
+                    dest = "dted_level",
+                    type = "int",
+                    help = "DTED level to calculate coverage for.")
 
-  file_ext = "*.dt" + str(dted_level)
+  parser.add_option("--dted-path",
+                    dest = "dted_path",
+                    default = "DTED",
+                    type = "string",
+                    help = "Path where the DTED files are located..")
+
+  parser.add_option("--src-image",
+                    dest = "src_image",
+                    default = "k_earth.bmp",
+                    type = "string",
+                    help = "Image to print dted coverage on.")
+
+  parser.add_option("--dest-image",
+                    dest = "dest_image",
+                    default = "k_earth_out.bmp",
+                    type = "string",
+                    help = "Where to save resulting image.")
+
+  options, remainder = parser.parse_args()
+
+  if options.src_image == options.dest_image:
+    print 'Cannot save src_image to dest_image'
+    sys.exit(-1)
+
+  if options.dted_level < 0 or options.dted_level > 2:
+    print 'Invalid dted level ' + options.dted_level
+    sys.exit(-1)
+
+  file_ext = "*.dt" + str(options.dted_level)
   
-  image = Image.open(src_image)
+  image = Image.open(options.src_image)
 
   size = [image.size[0] / 360, image.size[1] / 180]
 
   pixels = image.load()
 
-  for root, dirnames, filenames in os.walk(dted_path):
+  for root, dirnames, filenames in os.walk(options.dted_path):
     for filename in fnmatch.filter(filenames, file_ext):
-      cur_path = os.path.join(root, filename)
-
-      with open(cur_path, 'rb') as ifile:
-        ifile.seek(4, 0)
-
-        lon_origin_hr  = int(ifile.read(3))
-        ifile.seek(11, 0)
-        lon_origin_hem = ifile.read(1)
-        lat_origin_hr  = int(ifile.read(3))
-        ifile.seek(19, 0)
-        lat_origin_hem = ifile.read(1)
+      lat_origin_hr = int(filename[1:3])
+      lat_origin_hem = filename[0:1].upper()
+      lon_origin_hr = int(root[-3:])
+      lon_origin_hem = root[-4].upper()
 
       if lon_origin_hem == 'E':
         lon_origin_hr += 180
@@ -80,18 +77,8 @@ def main(argv):
         for j in range(lat_origin_hr * size[1] - size[1], lat_origin_hr * size[1]):
           pixels[i, j] = (255, 0, 0, 50)
 
-  image.save(dest_image)
-
-def usage():
-  usage = """
-  Usage: 
-    -h --help
-    --dted-level DTED level to calculate coverate for
-    --dted-path  Path where the DTED files are located
-    --src-image  Image to print dted coverage on
-    --dest-image Where to save resulting image
-  """
-  print usage
+  image.save(options.dest_image)
 
 if __name__ == "__main__":
   main(sys.argv[1:])
+
