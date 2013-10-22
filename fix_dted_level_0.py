@@ -11,11 +11,7 @@ import fnmatch
 import os
 import shutil
 import sys
-
-# File to use to construct other files
-# Must be available as an avg, min, and max file
-base_filename = 'dted/e015/s28.'
-file_exts = ['avg', 'min', 'max']
+import optparse
 
 def query_yes_no(question, default="yes"):
     """Ask a yes/no question via raw_input() and return their answer.
@@ -50,14 +46,29 @@ def query_yes_no(question, default="yes"):
                              "(or 'y' or 'n').\n")
 
 def main(argv):
+  # File to use to construct other files
+  # Must be available as an avg, min, and max file
+  base_filename = 'dted/e015/s28'
+  file_exts = ['avg', 'min', 'max']
+
+  parser = optparse.OptionParser()
+
+  parser.add_option("--dted-path",
+                    dest = "dted_path",
+                    default = "DTED",
+                    type = "string",
+                    help = "Path where the DTED files are located..")
+
+  options, remainder = parser.parse_args()
+
   for cur_file_ext in file_exts:
 
-    with open(base_filename, 'rb') as ifile:
+    with open(base_filename + '.' + cur_file_ext, 'rb') as ifile:
       # Read a copy of this files headers
       base_file_headers = ifile.read(3428)
 
-    for root, dirnames, filenames in os.walk('dted'):
-      for filename in fnmatch.filter(filenames, '*.avg'):
+    for root, dirnames, filenames in os.walk(options.dted_path):
+      for filename in fnmatch.filter(filenames, '*.' + cur_file_ext):
         cur_path = os.path.join(root, filename)
 
         print 'Working on file: ', cur_path
