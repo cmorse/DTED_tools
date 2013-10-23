@@ -10,6 +10,8 @@ import os, sys
 import fnmatch
 import optparse
 
+import latlon_tools as latlon
+
 def main(argv):
   parser = optparse.OptionParser()
 
@@ -39,10 +41,10 @@ def main(argv):
       with open(src_file, 'rb') as f:
         result = f.read(394)
 
-        cur_bound_lat_low  = fix_lat(int(result[1:3]), result[0])
-        cur_bound_lat_high = fix_lat(int(result[4:6]), result[3])
-        cur_bound_lon_low  = fix_lon(int(result[7:10]), result[6])
-        cur_bound_lon_high = fix_lon(int(result[11:14]), result[10])
+        cur_bound_lat_low  = latlon.fix_lat(int(result[1:3]), result[0])
+        cur_bound_lat_high = latlon.fix_lat(int(result[4:6]), result[3])
+        cur_bound_lon_low  = latlon.fix_lon(int(result[7:10]), result[6])
+        cur_bound_lon_high = latlon.fix_lon(int(result[11:14]), result[10])
 
         if cur_bound_lon_high == -180 and cur_bound_lon_low > cur_bound_lon_high:
           cur_bound_lon_high = abs(cur_bound_lon_high)
@@ -82,14 +84,14 @@ def main(argv):
   record_list = list(set(record_list))
 
   with open('dmed_test', 'wb') as ofile:
-    ofile.write(get_lat_hem(bound_lat_low)  + str(abs(bound_lat_low )).zfill(2))
-    ofile.write(get_lat_hem(bound_lat_high) + str(abs(bound_lat_high)).zfill(2))
-    ofile.write(get_lon_hem(bound_lon_low)  + str(abs(bound_lon_low )).zfill(3))
+    ofile.write(latlon.get_lat_hem(bound_lat_low)  + str(abs(bound_lat_low )).zfill(2))
+    ofile.write(latlon.get_lat_hem(bound_lat_high) + str(abs(bound_lat_high)).zfill(2))
+    ofile.write(latlon.get_lon_hem(bound_lon_low)  + str(abs(bound_lon_low )).zfill(3))
 
     # For some reason the dmed files wrap to W180 when they get to E180
     if bound_lon_high == 180:
       bound_lon_high *= -1
-    ofile.write(get_lon_hem(bound_lon_high) + str(abs(bound_lon_high)).zfill(3))
+    ofile.write(latlon.get_lon_hem(bound_lon_high) + str(abs(bound_lon_high)).zfill(3))
 
     ofile.write(' ' * (394 - 14))
 
@@ -97,11 +99,11 @@ def main(argv):
       ofile.write(item)
 
 def compare(it1, it2):
-  it1_lat = fix_lat(int(it1[1:3]), it1[0]) 
-  it2_lat = fix_lat(int(it2[1:3]), it2[0]) 
+  it1_lat = latlon.fix_lat(int(it1[1:3]), it1[0]) 
+  it2_lat = latlon.fix_lat(int(it2[1:3]), it2[0]) 
 
-  it1_lon = fix_lon(int(it1[4:7]), it1[3])
-  it2_lon = fix_lon(int(it2[4:7]), it2[3])
+  it1_lon = latlon.fix_lon(int(it1[4:7]), it1[3])
+  it2_lon = latlon.fix_lon(int(it2[4:7]), it2[3])
 
   if it1_lat < it2_lat:
     return -1
@@ -115,24 +117,6 @@ def compare(it1, it2):
     else:
       print 'wtf222'
       sys.exit(1)
-
-def fix_lat(lat, lat_hem):
-  if lat_hem == 'S':
-    lat *= -1
-
-  return lat
-
-def fix_lon(lon, lon_hem):
-  if lon_hem == 'W':
-    lon *= -1
-
-  return lon
-
-def get_lat_hem(lat):
-  return 'S' if lat < 0 else 'N'
-
-def get_lon_hem(lon):
-  return 'W' if lon < 0 else 'E'
 
 if __name__ == "__main__":
   main(sys.argv[1:])

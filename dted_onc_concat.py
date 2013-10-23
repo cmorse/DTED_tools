@@ -4,10 +4,13 @@
 # Released under the MIT license
 # http://opensource.org/licenses/mit-license.php
 
+# Merges group of DTED onc.dir files together
+
+import latlon_tools as latlon
+
 import os, sys
 import fnmatch
 import optparse
-import operator
 
 def main(argv):
   parser = optparse.OptionParser()
@@ -45,17 +48,13 @@ def main(argv):
               onc_dict[cur_onc] = {}
 
           elif line[0].upper() == "E" or line[0].upper() == "W":
-            cur_lon = int(line[1:])
-            if line[0].upper() == "W":
-              cur_lon *= -1
+            cur_lon = latlon.fix_lon(int(line[1:4]), line[0])
 
             if not onc_dict[cur_onc].has_key(cur_lon):
               onc_dict[cur_onc][cur_lon] = []
 
           elif line[0].upper() == "N" or line[0].upper() == "S":
-            cur_lat = int(line[1:3])
-            if line[0].upper() == "S":
-              cur_lat *= -1 
+            cur_lat = latlon.fix_lat(int(line[1:3]), line[0])
 
             if not cur_lat in onc_dict[cur_onc][cur_lon]:
               onc_dict[cur_onc][cur_lon].append(cur_lat)
@@ -68,10 +67,10 @@ def main(argv):
     for onc_name, lon_dict in sorted(onc_dict.iteritems()):
       ofile.write(onc_name + '\n')
       for lon, lat_list in sorted(lon_dict.iteritems()):
-        ofile.write((' ' * 4) + ("W" if lon < 0 else "E") + str(abs(lon)).zfill(3) + '\n')
+        ofile.write((' ' * 4) + latlon.get_lon_hem(lon) + str(abs(lon)).zfill(3) + '\n')
 
         for lat in sorted(lat_list):
-          ofile.write((' ' * 9) + ("S" if lat < 0 else "N") + str(abs(lat)).zfill(2) + '.dt0\n')
+          ofile.write((' ' * 9) + latlon.get_lat_hem(lat) + str(abs(lat)).zfill(2) + '.dt0\n')
 
 if __name__ == "__main__":
   main(sys.argv[1:])

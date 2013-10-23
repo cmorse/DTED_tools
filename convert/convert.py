@@ -17,6 +17,8 @@ import struct
 import StringIO, mmap
 import time
 
+from .. import latlon_tools as latlon
+
 try:
   import lz4
 
@@ -98,28 +100,22 @@ def main(argv):
         src_file = os.path.join(root, filename)
 
         latitude_hem  = filename[:1].upper()
-        latitude      = int(filename[1:3])
+        latitude      = fix_lat(int(filename[1:3]), latitude_hem)
         longitude_hem = filename[3:4].upper()
-        longitude     = int(filename[4:7])
+        longitude     = fix_lon(int(filename[4:7]), longitude_hem)
 
         if latitude_hem != 'S' and latitude_hem != 'N':
           print 'Bad_hemisphere: ' + latitude_hem
           sys.exit();
-        elif latitude < 0 or latitude > 90:
+        elif latitude < -90 or latitude > 90:
           print 'Bad latitude: ' + str(latitude)
           sys.exit()
         elif longitude_hem != 'E' and longitude_hem != 'W':
           print 'Bad_hemisphere: ' + longitude_hem
           sys.exit();
-        elif longitude < 0 or longitude > 180:
+        elif longitude < -180 or longitude > 180:
           print 'Bad longitude: ' + str(longitude)
           sys.exit()
-
-        if latitude_hem == 'S':
-          latitude *= -1
-
-        if longitude_hem == 'W':
-          longitude *= -1
 
         dest_file = options.output_path + get_dted_filename(latitude, longitude, options.dted_level)
 
@@ -192,9 +188,9 @@ def write_file(src_file, dest_file, ifile, latitude, longitude):
 
       # Write longitude
       mm.seek(4, 0)
-      mm.write(str(abs(longitude)).zfill(3) + '0000' + get_lon_hem(longitude))
+      mm.write(str(abs(longitude)).zfill(3) + '0000' + latlon.get_lon_hem(longitude))
       # Write latitude
-      mm.write(str(abs(latitude)).zfill(3)  + '0000' + get_lat_hem(latitude))
+      mm.write(str(abs(latitude)).zfill(3)  + '0000' + latlon.get_lat_hem(latitude))
 
       # Write lat and longitude interval
       mm.write(str(dted_lon_interval * 10).zfill(4))
@@ -228,24 +224,24 @@ def write_file(src_file, dest_file, ifile, latitude, longitude):
       mm.seek(80 + 185, 0)
 
       # Write lat_origin and lon_origin
-      mm.write(str(abs(latitude )).zfill(2) + '0000.0' + get_lat_hem(latitude))
-      mm.write(str(abs(longitude)).zfill(3) + '0000.0' + get_lon_hem(longitude))
+      mm.write(str(abs(latitude )).zfill(2) + '0000.0' + latlon.get_lat_hem(latitude))
+      mm.write(str(abs(longitude)).zfill(3) + '0000.0' + latlon.get_lon_hem(longitude))
 
       # Write lat_sw and lon_sw
-      mm.write(str(abs(latitude )).zfill(2) + '0000' + get_lat_hem(latitude))
-      mm.write(str(abs(longitude)).zfill(3) + '0000' + get_lon_hem(longitude))
+      mm.write(str(abs(latitude )).zfill(2) + '0000' + latlon.get_lat_hem(latitude))
+      mm.write(str(abs(longitude)).zfill(3) + '0000' + latlon.get_lon_hem(longitude))
 
       # Write lat_nw and lon_nw
-      mm.write(str(abs(latitude + 1)).zfill(2) + '0000' + get_lat_hem(latitude + 1))
-      mm.write(str(abs(longitude   )).zfill(3) + '0000' + get_lon_hem(longitude))
+      mm.write(str(abs(latitude + 1)).zfill(2) + '0000' + latlon.get_lat_hem(latitude + 1))
+      mm.write(str(abs(longitude   )).zfill(3) + '0000' + latlon.get_lon_hem(longitude))
 
       # Write lat_ne and lon_ne
-      mm.write(str(abs(latitude  + 1)).zfill(2) + '0000' + get_lat_hem(latitude  + 1))
-      mm.write(str(abs(longitude + 1)).zfill(3) + '0000' + get_lon_hem(longitude + 1))
+      mm.write(str(abs(latitude  + 1)).zfill(2) + '0000' + latlon.get_lat_hem(latitude  + 1))
+      mm.write(str(abs(longitude + 1)).zfill(3) + '0000' + latlon.get_lon_hem(longitude + 1))
 
       # Write lat_se and lon_se
-      mm.write(str(abs(latitude     )).zfill(2) + '0000' + get_lat_hem(latitude))
-      mm.write(str(abs(longitude + 1)).zfill(3) + '0000' + get_lon_hem(longitude + 1))
+      mm.write(str(abs(latitude     )).zfill(2) + '0000' + latlon.get_lat_hem(latitude))
+      mm.write(str(abs(longitude + 1)).zfill(3) + '0000' + latlon.get_lon_hem(longitude + 1))
 
       mm.seek(80 + 264 + 9)
 
@@ -352,8 +348,8 @@ def get_dted_details(latitude, dted_level):
   return lon_interval, lon_count
 
 def get_dted_filename(latitude, longitude, dted_level):
-  return get_lon_hem(longitude).lower() + (str(abs(longitude)).zfill(3)) + '/' + \
-         get_lat_hem(latitude).lower()  + (str(abs(latitude)).zfill(2)) + '.dt' + str(dted_level)
+  return latlon.get_lon_hem(longitude).lower() + (str(abs(longitude)).zfill(3)) + '/' + \
+         latlon.get_lat_hem(latitude).lower()  + (str(abs(latitude)).zfill(2)) + '.dt' + str(dted_level)
 
 def get_dted_filesize(lat_count, lon_count):
   return dted_headersize + dted_record_size(lat_count) * lon_count
@@ -379,12 +375,6 @@ def touch(path):
 
   with open(path, 'a'):
     os.utime(path, None)
-
-def get_lat_hem(lat):
-  return 'S' if lat < 0 else 'N'
-
-def get_lon_hem(lon):
-  return 'W' if lon < 0 else 'E'
 
 if __name__ == "__main__":
   main(sys.argv[1:])
