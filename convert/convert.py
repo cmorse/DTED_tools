@@ -10,25 +10,16 @@
 import numpy, scipy.misc
 import sys, os, errno
 import fnmatch
-import imp
 import optparse
 from array import *
 import struct
+import subprocess
 import StringIO, mmap
 import time
 
 sys.path.append('..')
 
 import latlon_tools as latlon
-
-try:
-  import lz4
-
-  from subprocess import *
-
-  has_lz4 = True
-except ImportError:
-  has_lz4 = False
 
 options = ''
 base_file_headers = ''
@@ -84,10 +75,9 @@ def main(argv):
   options.file_ext = ['*.' + ext for ext in options.file_ext.split(',')]
 
   if options.input_compress == 'lz4':
-    try:
-      imp.find_module('lz4')
-    except ImportError:
-      print 'lz4 module is required for this option!'
+    # Check if the lz4 executable is available
+    if not which('lz4'):
+      print 'lz4 command line tool must be in path'
       sys.exit(-1)
 
     options.file_ext = [ext + ".lz4" for ext in options.file_ext]
@@ -124,8 +114,8 @@ def main(argv):
         if not options.overwrite_dest and os.path.isfile(dest_file):
           continue
 
-        if has_lz4:
-          ifile = StringIO.StringIO(Popen(["lz4 -d " + src_file + ""], shell=True, stdout=PIPE).communicate()[0])
+        if options.input_compress == 'lz4': 
+          ifile = StringIO.StringIO(subprocess.Popen(["lz4 -d " + src_file + ""], shell=True, stdout=subprocess.PIPE).communicate()[0])
 
         else:
           ifile = open(src_file, 'rb')
@@ -361,6 +351,23 @@ dted_headersize = 80 + 648 + 2700
 def dted_record_size(lat_count):
   return 12 + (lat_count * 2)
 
+# See: http://stackoverflow.com/a/377028/880928
+def which(program):
+  def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+  fpath, fname = os.path.split(program)
+  if fpath:
+    if is_exe(program):
+      return program
+  else:
+    for path in os.environ["PATH"].split(os.pathsep):
+      path = path.strip('"')
+      exe_file = os.path.join(path, program)
+      if is_exe(exe_file):
+        return exe_file
+
+  return None
 
 def touch(path):
   folder = os.path.split(path)[0]
