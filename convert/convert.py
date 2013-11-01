@@ -8,7 +8,7 @@
 # See: http://dds.cr.usgs.gov/srtm/version1/Documentation/SRTM_Topo.txt
 
 import numpy, scipy.misc
-import os, sys, errno
+import sys, os, errno
 import fnmatch
 import imp
 import optparse
@@ -17,7 +17,9 @@ import struct
 import StringIO, mmap
 import time
 
-from .. import latlon_tools as latlon
+sys.path.append('..')
+
+import latlon_tools as latlon
 
 try:
   import lz4
@@ -100,9 +102,9 @@ def main(argv):
         src_file = os.path.join(root, filename)
 
         latitude_hem  = filename[:1].upper()
-        latitude      = fix_lat(int(filename[1:3]), latitude_hem)
+        latitude      = latlon.fix_lat(int(filename[1:3]), latitude_hem)
         longitude_hem = filename[3:4].upper()
-        longitude     = fix_lon(int(filename[4:7]), longitude_hem)
+        longitude     = latlon.fix_lon(int(filename[4:7]), longitude_hem)
 
         if latitude_hem != 'S' and latitude_hem != 'N':
           print 'Bad_hemisphere: ' + latitude_hem
