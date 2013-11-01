@@ -39,7 +39,7 @@ def main(argv):
   parser.add_option("--input-compress",
                     dest = "input_compress",
                     default = "",
-                    choices = ["", "lz4"],
+                    choices = ["", "lz4", "bz2", "gz"],
                     help = "Input files are compressed")
 
   parser.add_option("--dted-level",
@@ -82,6 +82,23 @@ def main(argv):
 
     options.file_ext = [ext + ".lz4" for ext in options.file_ext]
 
+  elif options.input_compress == 'bz2':
+    # Check if the bzcat executable is available
+    if not which('bzcat'):
+      print 'bzcat command line tool must be in path'
+      sys.exit(-1)
+
+    options.file_ext = [ext + ".bz2" for ext in options.file_ext]
+
+  elif options.input_compress == 'gz':
+    # Check if the zcat executable is available
+    if not which('zcat'):
+      print 'zcat command line tool must be in path'
+      sys.exit(-1)
+
+    options.file_ext = [ext + ".gz" for ext in options.file_ext]
+
+
   # Read a copy of this files headers
   with open(options.dted_base_header, 'rb') as ifile:
     base_file_headers = ifile.read(3428)
@@ -114,8 +131,19 @@ def main(argv):
         if not options.overwrite_dest and os.path.isfile(dest_file):
           continue
 
-        if options.input_compress == 'lz4': 
-          ifile = StringIO.StringIO(subprocess.Popen(["lz4 -d " + src_file + ""], shell=True, stdout=subprocess.PIPE).communicate()[0])
+        command = ""
+        if options.input_compress == "lz4":
+          command = "lz4 -d " + src_file + ""
+
+        elif options.input_compress == "bz2":
+          command = "bzcat -d " + src_file + ""
+
+        elif options.input_compress == "gz":
+          command = "zcat " + src_file + ""
+
+
+        if command != '':
+          ifile = StringIO.StringIO(subprocess.Popen([command], shell=True, stdout=subprocess.PIPE).communicate()[0])
 
         else:
           ifile = open(src_file, 'rb')
