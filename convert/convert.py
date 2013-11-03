@@ -279,7 +279,7 @@ def write_file(src_file, dest_file, ifile, latitude, longitude):
 
 
       # Read all of the values from the source file into memory
-      values = array('H')
+      values = array('>H')
 
       values.fromstring(ifile.getvalue())
 
@@ -311,8 +311,8 @@ def write_file(src_file, dest_file, ifile, latitude, longitude):
         for cur_val in cur_arr:
           checksum += (cur_val & 0x00FF) + ((cur_val & 0xFF00) >> 8)
 
-        # Copy all of the bytes over
-        mm.write(struct.pack("H" * dted_lat_count, *cur_arr))
+        # Copy all of the bytes for this row over
+        mm.write(struct.pack(">H" * dted_lat_count, *cur_arr))
 
         # Write checksum
         mm.write(struct.pack(">I", checksum))
